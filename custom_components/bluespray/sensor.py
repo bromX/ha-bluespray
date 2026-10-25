@@ -89,9 +89,10 @@ def _next_run_attrs(_fast: dict, slow: dict) -> dict:
     }
 
 
-def _tasks_today(_fast: dict, slow: dict):
-    today = [t for t in slow.get("tasks", []) if t.get("day", 0) == 0 and not t.get("cancel")]
-    return len(today)
+def _tasks_next_24h(_fast: dict, slow: dict):
+    """Number of non-cancelled tasks starting within the next 24 hours."""
+    limit = dt_util.utcnow().timestamp() + 24 * 3600
+    return sum(1 for t in _upcoming(slow) if to_seconds(t["start_time"]) <= limit)
 
 
 def _wx_first(kind: str, field: str):
@@ -138,7 +139,10 @@ SENSORS: tuple[BSSensorDescription, ...] = (
         key="next_run", name="Next scheduled run", device_class=SensorDeviceClass.TIMESTAMP,
         value_fn=_next_run, attrs_fn=_next_run_attrs,
     ),
-    BSSensorDescription(key="tasks_today", name="Tasks today", value_fn=_tasks_today),
+    BSSensorDescription(
+        # key kept as "tasks_today" so existing installs keep the same entity
+        key="tasks_today", name="Tasks in next 24 hours", value_fn=_tasks_next_24h,
+    ),
     BSSensorDescription(
         key="delay_days", name="Watering delay", device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.DAYS,
