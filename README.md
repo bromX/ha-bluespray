@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/icon.png" width="128" alt="BlueSpray">
+  <img src="https://raw.githubusercontent.com/bromX/ha-bluespray/main/images/icon.png" width="128" alt="BlueSpray">
 </p>
 
 # BlueSpray for Home Assistant (read-only)
