@@ -34,7 +34,12 @@ def as_list(result: Any) -> list[dict]:
 
 def list_from(result: Any, key: str) -> list[dict]:
     """Extract a list of dicts from {"<key>": [...]} (dict or one-element list)."""
-    if isinstance(result, list) and len(result) == 1 and isinstance(result[0], dict):
+    if (
+        isinstance(result, list)
+        and len(result) == 1
+        and isinstance(result[0], dict)
+        and key in result[0]
+    ):
         result = result[0]
     if isinstance(result, dict):
         items = result.get(key)

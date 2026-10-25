@@ -6,9 +6,11 @@ from dataclasses import dataclass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME, Platform
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import BlueSprayClient
+from .const import DOMAIN
 from .coordinator import FastCoordinator, SlowCoordinator
 
 PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
@@ -36,6 +38,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: BlueSprayConfigEntry) ->
     await fast.async_config_entry_first_refresh()
     await slow.async_config_entry_first_refresh()
     entry.runtime_data = BlueSprayData(client, fast, slow)
+
+    # Register the controller device first so per-zone devices can link to it.
+    system = (slow.data or {}).get("system") or {}
+    dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
+        name=(system.get("system") or {}).get("hostname") or "BlueSpray",
+        manufacturer="Avidz",
+        model="BlueSpray",
+        sw_version=(system.get("version") or {}).get("fw"),
+        serial_number=system.get("id"),
+    )
 
     @callback
     def _check_queue() -> None:

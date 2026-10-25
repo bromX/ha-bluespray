@@ -95,7 +95,7 @@ def _wx_max_rain(_fast: dict, slow: dict):
 
 SENSORS: tuple[BSSensorDescription, ...] = (
     BSSensorDescription(
-        key="flow_3s", name="Flow (3 s avg)",
+        key="flow_3s", name="Flow (3 s avg)", entity_registry_enabled_default=False,
         device_class=SensorDeviceClass.VOLUME_FLOW_RATE,
         native_unit_of_measurement=UnitOfVolumeFlowRate.GALLONS_PER_MINUTE,
         state_class=SensorStateClass.MEASUREMENT, value_fn=_flow(0),

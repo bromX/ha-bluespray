@@ -11,9 +11,11 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import BlueSprayConfigEntry
+from .const import DOMAIN
 from .entity import BlueSprayEntity
 from .sensor import running_terminals
 
@@ -60,6 +62,7 @@ BINARY_SENSORS: tuple[BSBinaryDescription, ...] = (
     ),
     BSBinaryDescription(
         key="door_sensor", name="Door", device_class=BinarySensorDeviceClass.GARAGE_DOOR,
+        entity_registry_enabled_default=False,
         value_fn=_door_open,
     ),
     BSBinaryDescription(
@@ -83,7 +86,7 @@ def _zone_description(zone: dict) -> BSBinaryDescription:
     terminal = zone.get("terminal")
     return BSBinaryDescription(
         key=f"zone_{zone.get('id')}",
-        name=zone.get("name") or f"Zone {terminal}",
+        name="Running",
         device_class=BinarySensorDeviceClass.RUNNING,
         value_fn=lambda f, s, t=terminal: t in running_terminals(f),
         attrs_fn=lambda f, s, z=zone: {
@@ -105,9 +108,13 @@ async def async_setup_entry(
         skip.add("rain_sensor")
     if 0 not in types:
         skip.add("door_sensor")
-    descriptions = [d for d in BINARY_SENSORS if d.key not in skip]
-    descriptions += [_zone_description(z) for z in slow.get("zones", [])]
-    async_add_entities(BlueSprayBinarySensor(entry, d) for d in descriptions)
+    entities: list[BlueSprayBinarySensor] = [
+        BlueSprayBinarySensor(entry, d) for d in BINARY_SENSORS if d.key not in skip
+    ]
+    entities += [
+        BlueSprayZoneSensor(entry, _zone_description(z), z) for z in slow.get("zones", [])
+    ]
+    async_add_entities(entities)
 
 
 class BlueSprayBinarySensor(BlueSprayEntity, BinarySensorEntity):
@@ -121,3 +128,21 @@ class BlueSprayBinarySensor(BlueSprayEntity, BinarySensorEntity):
     def extra_state_attributes(self):
         fn = self.entity_description.attrs_fn
         return fn(self._fast_data, self._slow_data) if fn else None
+
+
+class BlueSprayZoneSensor(BlueSprayBinarySensor):
+    """Zone 'running' sensor, shown on its own device linked to the controller."""
+
+    def __init__(self, entry, description, zone: dict) -> None:
+        super().__init__(entry, description)
+        self._zone = zone
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, f"{self._entry.entry_id}_zone_{self._zone.get('id')}")},
+            name=self._zone.get("name") or f"Zone {self._zone.get('terminal')}",
+            manufacturer="Avidz",
+            model="BlueSpray zone",
+            via_device=(DOMAIN, self._entry.entry_id),
+        )
