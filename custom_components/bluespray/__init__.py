@@ -49,6 +49,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: BlueSprayConfigEntry) ->
         model="BlueSpray",
         sw_version=(system.get("version") or {}).get("fw"),
         serial_number=system.get("id"),
+        configuration_url=f"http://{entry.data[CONF_HOST]}",
     )
 
     @callback
