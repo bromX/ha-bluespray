@@ -7,7 +7,7 @@ import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import BlueSprayClient, BlueSprayError, as_dict, as_list
+from .api import BlueSprayClient, BlueSprayError, as_dict, list_from
 from .const import DOMAIN, FAST_INTERVAL, SLOW_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
@@ -71,8 +71,8 @@ class SlowCoordinator(DataUpdateCoordinator[dict]):
         return {
             "settings": pick("settings", as_dict, old.get("settings", {})),
             "system": pick("system", as_dict, old.get("system", {})),
-            "zones": pick("zones", as_list, old.get("zones", [])),
-            "sensors": pick("sensors", as_list, old.get("sensors", [])),
+            "zones": pick("zones", lambda r: list_from(r, "zones"), old.get("zones", [])),
+            "sensors": pick("sensors", lambda r: list_from(r, "sensors"), old.get("sensors", [])),
             "wx": pick("wx", as_dict, old.get("wx", {})),
             "tasks": tasks if not {"tasks0", "tasks1"} <= set(failed) else old.get("tasks", []),
         }

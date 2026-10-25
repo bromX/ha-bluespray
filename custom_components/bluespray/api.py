@@ -32,6 +32,25 @@ def as_list(result: Any) -> list[dict]:
     return out
 
 
+def list_from(result: Any, key: str) -> list[dict]:
+    """Extract a list of dicts from {"<key>": [...]} (dict or one-element list)."""
+    if isinstance(result, list) and len(result) == 1 and isinstance(result[0], dict):
+        result = result[0]
+    if isinstance(result, dict):
+        items = result.get(key)
+        return [i for i in items if isinstance(i, dict)] if isinstance(items, list) else []
+    return as_list(result)
+
+
+def to_seconds(value: Any) -> float | None:
+    """The controller mixes seconds and milliseconds since epoch; return seconds."""
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return None
+    return v / 1000 if v > 1e11 else v
+
+
 class BlueSprayClient:
     """Talks to http://<host>/api/<endpoint> using POST + JSON. GET actions only."""
 
