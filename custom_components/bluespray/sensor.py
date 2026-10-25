@@ -135,7 +135,7 @@ SENSORS: tuple[BSSensorDescription, ...] = (
         },
     ),
     BSSensorDescription(
-        key="next_run", name="Next run", device_class=SensorDeviceClass.TIMESTAMP,
+        key="next_run", name="Next scheduled run", device_class=SensorDeviceClass.TIMESTAMP,
         value_fn=_next_run, attrs_fn=_next_run_attrs,
     ),
     BSSensorDescription(key="tasks_today", name="Tasks today", value_fn=_tasks_today),
