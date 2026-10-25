@@ -60,6 +60,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: BlueSprayConfigEntry) ->
             hass.async_create_task(slow.async_request_refresh())
 
     entry.async_on_unload(fast.async_add_listener(_check_queue))
+    # Coordinators only poll on a schedule while something is listening.
+    # No entity listens to the slow coordinator directly, so add a no-op listener.
+    entry.async_on_unload(slow.async_add_listener(lambda: None))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
