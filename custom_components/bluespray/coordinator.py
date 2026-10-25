@@ -33,6 +33,7 @@ class SlowCoordinator(DataUpdateCoordinator[dict]):
     def __init__(self, hass: HomeAssistant, client: BlueSprayClient) -> None:
         super().__init__(hass, _LOGGER, name=f"{DOMAIN}_config", update_interval=SLOW_INTERVAL)
         self.client = client
+        self.wx_consumers = 0  # number of enabled entities that need /api/wx
 
     async def _async_update_data(self) -> dict:
         c = self.client
@@ -41,10 +42,12 @@ class SlowCoordinator(DataUpdateCoordinator[dict]):
             "system": c.get("system"),
             "zones": c.get("zones"),
             "sensors": c.get("sensors"),
-            "wx": c.get("wx"),
             "tasks0": c.get("tasks", {"day": 0}),
             "tasks1": c.get("tasks", {"day": 1}),
         }
+        if self.wx_consumers > 0:
+            calls["wx"] = c.get("wx")
+
         results = await asyncio.gather(*calls.values(), return_exceptions=True)
         raw = dict(zip(calls, results))
         failed = [k for k, v in raw.items() if isinstance(v, Exception)]
@@ -56,7 +59,9 @@ class SlowCoordinator(DataUpdateCoordinator[dict]):
         old = self.data or {}
 
         def pick(key, fn, default):
-            return default if key in failed else fn(raw[key])
+            if key not in raw or key in failed:
+                return default
+            return fn(raw[key])
 
         tasks: list[dict] = []
         for key in ("tasks0", "tasks1"):
