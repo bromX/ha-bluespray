@@ -7,6 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import BlueSprayClient
@@ -65,6 +66,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: BlueSprayConfigEntry) ->
     # No entity listens to the slow coordinator directly, so add a no-op listener.
     entry.async_on_unload(slow.async_add_listener(lambda: None))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Clean up the per-zone devices from earlier versions. Zone sensors now live
+    # on the controller device, so those devices are empty. Only remove a device
+    # once it has no entities left, so no entity is ever deleted.
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    zone_prefix = f"{entry.entry_id}_zone_"
+    for device in dr.async_entries_for_config_entry(dev_reg, entry.entry_id):
+        is_zone_device = any(
+            domain == DOMAIN and ident.startswith(zone_prefix)
+            for domain, ident in device.identifiers
+        )
+        if is_zone_device and not er.async_entries_for_device(
+            ent_reg, device.id, include_disabled_entities=True
+        ):
+            dev_reg.async_remove_device(device.id)
+
     return True
 
 
