@@ -7,15 +7,10 @@
 Comments: Created using Claude using the Blyespray local API.
 Only works with a local controller directly accessing it via the rest API.
 
-This is currently a read only integration polling data from the controller every 30 second.
+This is currently a read only integration polling data from the controller.
 In the future I might rebuild this to be read-write.
 
 
 Install: copy `custom_components/bluespray` into your HA config's `custom_components/` folder,
 restart HA, then Settings > Devices & services > Add integration > "BlueSpray".
-
-Debug logging (configuration.yaml):
-
-    logger:
-      logs:
-        custom_components.bluespray: debug
+or use HACS
