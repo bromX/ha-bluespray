@@ -30,14 +30,28 @@ class BSSensorDescription(SensorEntityDescription):
     uses_wx: bool = False
 
 
-def running_terminals(fast: dict) -> list[int]:
+def running_terminals(fast: dict, slow: dict | None = None) -> list[int]:
+    """Terminals currently on. If zone info is available, only real zones are
+    returned (master valve outputs such as extra_mv are excluded)."""
     now = to_seconds(fast.get("time")) or dt_util.utcnow().timestamp()
+    zone_terminals = {z.get("terminal") for z in (slow or {}).get("zones", [])}
     out = []
     for z in fast.get("active_zones") or []:
         on, off = to_seconds(z.get("on")) or 0, to_seconds(z.get("off")) or 0
         if on <= now and (not off or now < off):
-            out.append(z.get("terminal"))
+            terminal = z.get("terminal")
+            if zone_terminals and terminal not in zone_terminals:
+                continue
+            out.append(terminal)
     return out
+
+
+def _other_active(fast: dict, slow: dict) -> list[int]:
+    """Active terminals that are not zones (e.g. a master valve)."""
+    zones = set(running_terminals(fast, slow))
+    return [
+        t for t in running_terminals(fast) if t not in zones
+    ]
 
 
 def _flow(idx: int):
@@ -114,8 +128,11 @@ SENSORS: tuple[BSSensorDescription, ...] = (
     ),
     BSSensorDescription(
         key="active_zones", name="Active zones", state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda f, s: len(running_terminals(f)),
-        attrs_fn=lambda f, s: {"terminals": running_terminals(f)},
+        value_fn=lambda f, s: len(running_terminals(f, s)),
+        attrs_fn=lambda f, s: {
+            "terminals": running_terminals(f, s),
+            "other_active_terminals": _other_active(f, s),
+        },
     ),
     BSSensorDescription(
         key="next_run", name="Next run", device_class=SensorDeviceClass.TIMESTAMP,

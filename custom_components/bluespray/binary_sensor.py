@@ -50,8 +50,8 @@ BINARY_SENSORS: tuple[BSBinaryDescription, ...] = (
     BSBinaryDescription(
         key="irrigating", name="Irrigating", icon="mdi:sprinkler-variant",
         device_class=BinarySensorDeviceClass.RUNNING,
-        value_fn=lambda f, s: bool(running_terminals(f)),
-        attrs_fn=lambda f, s: {"terminals": running_terminals(f)},
+        value_fn=lambda f, s: bool(running_terminals(f, s)),
+        attrs_fn=lambda f, s: {"terminals": running_terminals(f, s)},
     ),
     BSBinaryDescription(
         key="rain_sensor", name="Rain sensor", device_class=BinarySensorDeviceClass.MOISTURE,
