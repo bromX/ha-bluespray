@@ -2,5 +2,5 @@
 from datetime import timedelta
 
 DOMAIN = "bluespray"
-FAST_INTERVAL = timedelta(seconds=30)   # /api/status
+FAST_INTERVAL = timedelta(seconds=60)   # /api/status
 SLOW_INTERVAL = timedelta(minutes=5)    # everything else
