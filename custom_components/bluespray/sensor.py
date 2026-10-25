@@ -125,20 +125,26 @@ SENSORS: tuple[BSSensorDescription, ...] = (
     ),
     BSSensorDescription(
         key="wx_rain_next", name="Forecast rain chance (next)", native_unit_of_measurement="%",
+        entity_registry_enabled_default=False,
         value_fn=_wx_first("rain", "por"),
     ),
     BSSensorDescription(
         key="wx_rain_max", name="Forecast rain chance (max)", native_unit_of_measurement="%",
+        entity_registry_enabled_default=False,
         value_fn=_wx_max_rain,
         attrs_fn=lambda f, s: {"threshold": (s.get("wx") or {}).get("rain"),
                                "forecast_hours": (s.get("wx") or {}).get("hr")},
     ),
     BSSensorDescription(
-        key="wx_wind_next", name="Forecast wind (next)", value_fn=_wx_first("wind", "wind"),
+        key="wx_wind_next", name="Forecast wind (next)",
+        entity_registry_enabled_default=False,
+        value_fn=_wx_first("wind", "wind"),
         attrs_fn=lambda f, s: {"threshold": (s.get("wx") or {}).get("wind")},
     ),
     BSSensorDescription(
-        key="wx_temp_next", name="Forecast temperature (next)", value_fn=_wx_first("temp", "temp"),
+        key="wx_temp_next", name="Forecast temperature (next)",
+        entity_registry_enabled_default=False,
+        value_fn=_wx_first("temp", "temp"),
         attrs_fn=lambda f, s: {"threshold": (s.get("wx") or {}).get("temp")},
     ),
     BSSensorDescription(
