@@ -1,11 +1,12 @@
 {
   "domain": "bluespray",
   "name": "BlueSpray Irrigation Controller",
-  "version": "0.1.2",
+  "codeowners": ["@bromX"],
   "config_flow": true,
   "documentation": "https://github.com/bromX/ha-bluespray",
-  "issue_tracker": "https://github.com/bromX/ha-bluespray/issues",
+  "integration_type": "device",
   "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/bromX/ha-bluespray/issues",
   "requirements": [],
-  "codeowners": []
+  "version": "0.1.2"
 }
