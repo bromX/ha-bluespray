@@ -54,7 +54,7 @@ BINARY_SENSORS: tuple[BSBinaryDescription, ...] = (
         attrs_fn=lambda f, s: {"terminals": running_terminals(f)},
     ),
     BSBinaryDescription(
-        key="rain_sensor", name="Rain sensor tripped", device_class=BinarySensorDeviceClass.MOISTURE,
+        key="rain_sensor", name="Rain sensor", device_class=BinarySensorDeviceClass.MOISTURE,
         value_fn=_rain_tripped,
         attrs_fn=lambda f, s: {"raw_state": (f.get("sensors") or {}).get("rain"),
                                "bypassed": bool((s.get("settings") or {}).get("bypass"))},
@@ -128,3 +128,4 @@ class BlueSprayBinarySensor(BlueSprayEntity, BinarySensorEntity):
     def extra_state_attributes(self):
         fn = self.entity_description.attrs_fn
         return fn(self._fast_data, self._slow_data) if fn else None
+
