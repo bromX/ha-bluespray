@@ -1,0 +1,64 @@
+"""Minimal read-only client for the BlueSpray HTTP/JSON API."""
+from __future__ import annotations
+
+import asyncio
+import random
+from typing import Any
+
+import aiohttp
+
+
+class BlueSprayError(Exception):
+    """Raised on any communication or protocol problem."""
+
+
+def as_dict(result: Any) -> dict:
+    """Normalise a 'result' payload to a single dict."""
+    if isinstance(result, list):
+        result = result[0] if result else {}
+    return result if isinstance(result, dict) else {}
+
+
+def as_list(result: Any) -> list[dict]:
+    """Normalise a 'result' payload to a flat list of dicts."""
+    if isinstance(result, dict):
+        return [result]
+    out: list[dict] = []
+    for item in result or []:
+        if isinstance(item, list):
+            out.extend(i for i in item if isinstance(i, dict))
+        elif isinstance(item, dict):
+            out.append(item)
+    return out
+
+
+class BlueSprayClient:
+    """Talks to http://<host>/api/<endpoint> using POST + JSON. GET actions only."""
+
+    def __init__(
+        self,
+        session: aiohttp.ClientSession,
+        host: str,
+        username: str | None = None,
+        password: str | None = None,
+    ) -> None:
+        self._session = session
+        self._base = f"http://{host}/api"
+        self._auth = (
+            aiohttp.BasicAuth(username, password) if username and password else None
+        )
+
+    async def get(self, endpoint: str, data: dict | None = None) -> Any:
+        payload = {"action": "get", "data": data, "id": random.randint(1, 99999)}
+        try:
+            async with asyncio.timeout(10):
+                async with self._session.post(
+                    f"{self._base}/{endpoint}", json=payload, auth=self._auth
+                ) as resp:
+                    resp.raise_for_status()
+                    body = await resp.json(content_type=None)
+        except (aiohttp.ClientError, TimeoutError, ValueError) as err:
+            raise BlueSprayError(f"{endpoint}: {err}") from err
+        if isinstance(body, dict) and "result" in body:
+            return body["result"]
+        return body

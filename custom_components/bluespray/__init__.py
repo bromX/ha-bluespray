@@ -1,0 +1,54 @@
+"""BlueSpray irrigation controller (read-only)."""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME, Platform
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+from .api import BlueSprayClient
+from .coordinator import FastCoordinator, SlowCoordinator
+
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
+
+
+@dataclass
+class BlueSprayData:
+    client: BlueSprayClient
+    fast: FastCoordinator
+    slow: SlowCoordinator
+
+
+type BlueSprayConfigEntry = ConfigEntry[BlueSprayData]
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: BlueSprayConfigEntry) -> bool:
+    client = BlueSprayClient(
+        async_get_clientsession(hass),
+        entry.data[CONF_HOST],
+        entry.data.get(CONF_USERNAME),
+        entry.data.get(CONF_PASSWORD),
+    )
+    fast = FastCoordinator(hass, client)
+    slow = SlowCoordinator(hass, client)
+    await fast.async_config_entry_first_refresh()
+    await slow.async_config_entry_first_refresh()
+    entry.runtime_data = BlueSprayData(client, fast, slow)
+
+    @callback
+    def _check_queue() -> None:
+        # The controller queues task/zone/settings/season changes into the status
+        # response. When something shows up there, refresh the slow data now.
+        queue = (fast.data or {}).get("queue") or {}
+        if any(queue.values()):
+            hass.async_create_task(slow.async_request_refresh())
+
+    entry.async_on_unload(fast.async_add_listener(_check_queue))
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: BlueSprayConfigEntry) -> bool:
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

@@ -1,0 +1,17 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BlueSpray controller",
+        "description": "IP address (or host:port) of the controller. Username/password only if login is enabled on the controller.",
+        "data": {
+          "host": "Host",
+          "username": "Username (optional)",
+          "password": "Password (optional)"
+        }
+      }
+    },
+    "error": { "cannot_connect": "Could not reach the controller" },
+    "abort": { "already_configured": "This controller is already configured" }
+  }
+}
