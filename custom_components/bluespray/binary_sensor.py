@@ -48,7 +48,8 @@ def _door_open(fast: dict, _slow: dict):
 
 BINARY_SENSORS: tuple[BSBinaryDescription, ...] = (
     BSBinaryDescription(
-        key="irrigating", name="Irrigating", device_class=BinarySensorDeviceClass.RUNNING,
+        key="irrigating", name="Irrigating", icon="mdi:sprinkler-variant",
+        device_class=BinarySensorDeviceClass.RUNNING,
         value_fn=lambda f, s: bool(running_terminals(f)),
         attrs_fn=lambda f, s: {"terminals": running_terminals(f)},
     ),
@@ -85,6 +86,7 @@ def _zone_description(zone: dict) -> BSBinaryDescription:
     return BSBinaryDescription(
         key=f"zone_{zone.get('id')}",
         name=f"Zone - {zone['name']}" if zone.get("name") else f"Zone {terminal}",
+        icon="mdi:sprinkler",
         device_class=BinarySensorDeviceClass.RUNNING,
         value_fn=lambda f, s, t=terminal: t in running_terminals(f),
         attrs_fn=lambda f, s, z=zone: {
@@ -126,4 +128,3 @@ class BlueSprayBinarySensor(BlueSprayEntity, BinarySensorEntity):
     def extra_state_attributes(self):
         fn = self.entity_description.attrs_fn
         return fn(self._fast_data, self._slow_data) if fn else None
-
