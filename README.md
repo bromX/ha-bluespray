@@ -11,6 +11,7 @@ This is mainly a read only integration polling data from the controller.
 Provides details on the irrigation systems operation and upcoming events.
 
 It can also initiate a manual run of an existing program.
+(Just a note... anyone using HomeAssistant can click and run an irrigation program without authentication.)
 
 I have not tested flow or forecast sensors as I don't have either enabled on my system.
 
