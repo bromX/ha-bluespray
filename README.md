@@ -7,9 +7,10 @@
 Created using Claude using the BlueSpray local API.
 Only works with a local controller directly accessing it via the rest API.
 
-This is currently a read only integration polling data from the controller.
+This is mainly a read only integration polling data from the controller.
 Provides details on the irrigation systems operation and upcoming events.
-In the future I might rebuild this to be read-write.
+
+It can also initiate a manual run of an existing program.
 
 I have not tested flow or forecast sensors as I don't have either enabled on my system.
 
