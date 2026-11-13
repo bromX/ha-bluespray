@@ -12,6 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import BlueSprayConfigEntry
 from .api import BlueSprayError, manual_run_payload
 from .entity import BlueSprayEntity
+from .sensor import running_terminals
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -76,6 +77,28 @@ class BlueSprayProgramButton(BlueSprayEntity, ButtonEntity):
             raise HomeAssistantError(f"Program '{program.get('name')}' has no run times")
 
         data = self._entry.runtime_data
+
+        # Refuse to start while anything is already watering. Refresh the status
+        # first so we don't rely on data that could be up to 30 seconds old.
+        await data.fast.async_refresh()
+        if not data.fast.last_update_success:
+            raise HomeAssistantError(
+                f"Program '{program.get('name')}' was not started: "
+                "could not confirm the controller is idle"
+            )
+        slow_data = data.slow.data or {}
+        running = running_terminals(data.fast.data or {}, slow_data)
+        if running:
+            zone_names = {
+                z.get("terminal"): z.get("name") or f"Zone {z.get('terminal')}"
+                for z in slow_data.get("zones", [])
+            }
+            active = ", ".join(zone_names.get(t, f"terminal {t}") for t in running)
+            raise HomeAssistantError(
+                f"Program '{program.get('name')}' was not started: "
+                f"the controller is already irrigating ({active})"
+            )
+
         _LOGGER.info("Starting program '%s' as a manual run: %s", program.get("name"), payload)
         try:
             result = await data.client.set("manual", payload)
