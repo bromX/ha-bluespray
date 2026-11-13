@@ -1,4 +1,4 @@
-"""BlueSpray irrigation controller (read-only)."""
+"""BlueSpray irrigation controller."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -14,7 +14,7 @@ from .api import BlueSprayClient
 from .const import DOMAIN
 from .coordinator import FastCoordinator, SlowCoordinator
 
-PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.BUTTON]
 
 
 @dataclass
@@ -40,7 +40,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: BlueSprayConfigEntry) ->
     await slow.async_config_entry_first_refresh()
     entry.runtime_data = BlueSprayData(client, fast, slow)
 
-    # Register the controller device first so per-zone devices can link to it.
+    # Register the controller device up front (name, firmware, web link).
     system = (slow.data or {}).get("system") or {}
     dr.async_get(hass).async_get_or_create(
         config_entry_id=entry.entry_id,

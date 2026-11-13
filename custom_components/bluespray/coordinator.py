@@ -7,7 +7,7 @@ import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import BlueSprayClient, BlueSprayError, as_dict, list_from
+from .api import BlueSprayClient, BlueSprayError, as_dict, as_list, list_from
 from .const import DOMAIN, FAST_INTERVAL, SLOW_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class FastCoordinator(DataUpdateCoordinator[dict]):
 
 
 class SlowCoordinator(DataUpdateCoordinator[dict]):
-    """Polls settings, system, zones, sensors, weather and tasks."""
+    """Polls settings, system, zones, sensors, programs, weather and tasks."""
 
     def __init__(self, hass: HomeAssistant, client: BlueSprayClient) -> None:
         super().__init__(hass, _LOGGER, name=f"{DOMAIN}_config", update_interval=SLOW_INTERVAL)
@@ -42,6 +42,7 @@ class SlowCoordinator(DataUpdateCoordinator[dict]):
             "system": c.get("system"),
             "zones": c.get("zones"),
             "sensors": c.get("sensors"),
+            "programs": c.get("programs"),
             "tasks0": c.get("tasks", {"day": 0}),
             "tasks1": c.get("tasks", {"day": 1}),
         }
@@ -73,6 +74,7 @@ class SlowCoordinator(DataUpdateCoordinator[dict]):
             "system": pick("system", as_dict, old.get("system", {})),
             "zones": pick("zones", lambda r: list_from(r, "zones"), old.get("zones", [])),
             "sensors": pick("sensors", lambda r: list_from(r, "sensors"), old.get("sensors", [])),
+            "programs": pick("programs", as_list, old.get("programs", [])),
             "wx": pick("wx", as_dict, old.get("wx", {})),
             "tasks": tasks if not {"tasks0", "tasks1"} <= set(failed) else old.get("tasks", []),
         }

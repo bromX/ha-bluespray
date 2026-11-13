@@ -1,4 +1,4 @@
-"""Minimal read-only client for the BlueSpray HTTP/JSON API."""
+"""Minimal client for the BlueSpray HTTP/JSON API."""
 from __future__ import annotations
 
 import asyncio
@@ -56,8 +56,32 @@ def to_seconds(value: Any) -> float | None:
     return v / 1000 if v > 1e11 else v
 
 
+def manual_run_payload(program: dict) -> dict | None:
+    """Build a manual-run payload that starts a program's own settings now.
+
+    Returns None if the program has no run times. `mv` is passed through as the
+    program has it (this controller uses 0 = none, 1 = main, 2 = extra valve).
+    """
+    try:
+        runs = [int(r) for r in program.get("runs") or []]
+    except (TypeError, ValueError):
+        return None
+    if not any(r > 0 for r in runs):
+        return None
+    mv = program.get("mv", 0)
+    if isinstance(mv, list):
+        mv = mv[0] if mv else 0
+    return {
+        "start": 0,  # 0 = start immediately
+        "unit": program.get("unit") or "m",
+        "mv": mv,
+        "pause": program.get("pause") or 0,
+        "runs": runs,
+    }
+
+
 class BlueSprayClient:
-    """Talks to http://<host>/api/<endpoint> using POST + JSON. GET actions only."""
+    """Talks to http://<host>/api/<endpoint> using POST + JSON."""
 
     def __init__(
         self,
@@ -73,7 +97,13 @@ class BlueSprayClient:
         )
 
     async def get(self, endpoint: str, data: dict | None = None) -> Any:
-        payload = {"action": "get", "data": data, "id": random.randint(1, 99999)}
+        return await self._request("get", endpoint, data)
+
+    async def set(self, endpoint: str, data: Any) -> Any:
+        return await self._request("set", endpoint, data)
+
+    async def _request(self, action: str, endpoint: str, data: Any) -> Any:
+        payload = {"action": action, "data": data, "id": random.randint(1, 99999)}
         try:
             async with asyncio.timeout(10):
                 async with self._session.post(
